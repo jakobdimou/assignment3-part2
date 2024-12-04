@@ -90,7 +90,7 @@ After=network-online.target
 Wants=network-online.target 
 
 [Service]
-Type=oneshot # run the script once and exit
+Type=oneshot 
 ExecStart=/var/lib/webgen/bin/generate_index 
 User=webgen
 Group=webgen
