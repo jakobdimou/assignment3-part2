@@ -35,8 +35,7 @@ include /etc/nginx/conf.d/*.conf
 ```
 **Note:** make sure to put it in http block
 
-And to create the directory if it does not exist:
-```sudo mkdir -p /etc/nginx/conf.d```
+
 
 
 Creating a separate server block files allows sites to be disabled easily by just renaming them to add disabled at the end, e.g. `webgen.conf.disabled`. It also makes configurations easier to manage as each configuration has their own separate file.
