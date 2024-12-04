@@ -1,0 +1,71 @@
+#!/bin/bash
+
+if [[ EUID -ne 0 ]]; then
+    echo "This script must be run as root."
+    exit 1
+fi
+
+if [[ ! -d /etc/nginx/conf.d/ ]]; then
+    mkdir -p /etc/nginx/conf.d/
+fi
+if [[ $? eq 0 ]]; then
+    echo "Successfully created /etc/nginx/conf.d/ directory."
+else
+    echo "Error: Failed to create /etc/nginx/conf.d/ directory." >&2
+    exit 1
+fi
+
+
+if [[ ! -f /etc/nginx/conf.d/webgen.conf ]]; then
+    touch /etc/nginx/conf.d/webgen.conf
+    cat > /etc/nginx/conf.d/webgen.conf <<- "isagi"
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name _;
+
+    root /var/lib/webgen/HTML;
+    index index.html;
+
+    location /documents {
+        root /var/lib/webgen;
+        autoindex on;                # Enables the directory listing
+        autoindex_exact_size off;    # Shows file sizes, human-readable
+        autoindex_localtime on;      # Displays file timestamps
+    }
+
+}
+isagi
+fi
+
+
+if [[ $? -eq 0 ]]; then
+    echo "Successfully created webgen.conf at /etc/nginx/conf.d/webgen.conf."
+else
+    echo "Error: Failed to create the file at /etc/nginx/conf.d/webgen.conf." >&2
+    exit 1
+fi
+
+
+if [[ ! -d /var/lib/webgen/documents ]]; then
+    mkdir -p /var/lib/webgen/documents
+    touch /var/lib/webgen/documents/file-one
+    cat > /var/lib/webgen/documents/file-one <<- "isagi"
+    ore wa striker da
+isagi
+    touch /var/lib/webgen/documents/file-two
+    cat > /var/lib/webgen/documents/file-two <<- "isagi"
+    alucard is the best
+isagi
+fi
+
+if [[ $? -eq 0 ]]; then
+    echo "Successfully created /var/lib/webgen/documents directory and files."
+else
+    echo "Error: Failed to create the directory and files at /var/lib/webgen/documents." >&2
+    exit 1
+fi
+
+
+

@@ -1,0 +1,132 @@
+#!/bin/bash
+
+if [[ EUID -ne 0 ]]; then
+    echo "This script must be run as root."
+    exit 1
+fi
+
+# -d specifies the home directory, -r makes the new user a system user, -m creates the home directory if it does not exist, -s sets the shell
+# /usr/sbin/nologin is a shell that prevents the user from logging in as webgen is a user meant for running services
+useradd -d /var/lib/webgen -r -m -s /usr/sbin/nologin webgen # create the webgen user
+
+if [[ ! -d /var/lib/webgen/HTML ]]; then
+    mkdir -p /var/lib/webgen/HTML
+fi
+
+if [[ ! -d /var/lib/webgen/bin ]]; then
+    mkdir -p /var/lib/webgen/bin
+fi
+
+if [[ ! -f /var/lib/webgen/bin/generate_index ]]; then
+    touch /var/lib/webgen/bin/generate_index
+    cat > /var/lib/webgen/bin/generate_index <<- "isagi" 
+#!/bin/bash
+
+set -euo pipefail
+
+# this is the generate_index script
+# you shouldn't have to edit this script
+
+# Variables
+KERNEL_RELEASE=$(uname -r)
+OS_NAME=$(grep '^PRETTY_NAME' /etc/os-release | cut -d '=' -f2 | tr -d '"')
+DATE=$(date +"%d/%m/%Y")
+PACKAGE_COUNT=$(pacman -Q | wc -l)
+PUBLIC_IP_ADRESS=$(ip -4 a show dev eth0 | grep inet | awk '{print $2}' | cut -d/ -f1)
+OUTPUT_DIR="/var/lib/webgen/HTML"
+OUTPUT_FILE="$OUTPUT_DIR/index.html"
+
+# Ensure the target directory exists
+if [[ ! -d "$OUTPUT_DIR" ]]; then
+    echo "Error: Failed to create or access directory $OUTPUT_DIR." >&2
+    exit 1
+fi
+
+# Create the index.html file
+cat <<EOF > "$OUTPUT_FILE"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Information</title>
+</head>
+<body>
+    <h1>System Information</h1>
+    <p><strong>Kernel Release:</strong> $KERNEL_RELEASE</p>
+    <p><strong>Operating System:</strong> $OS_NAME</p>
+    <p><strong>Date:</strong> $DATE</p>
+    <p><strong>Number of Installed Packages:</strong> $PACKAGE_COUNT</p>
+    <p><strong>Public IP address of server:</strong> $PUBLIC_IP_ADRESS</p>
+</body>
+</html>
+EOF
+
+# Check if the file was created successfully
+if [ $? -eq 0 ]; then
+    echo "Success: File created at $OUTPUT_FILE."
+else
+    echo "Error: Failed to create the file at $OUTPUT_FILE." >&2
+    exit 1
+fi
+isagi
+if [[ $? -eq 0 ]]; then
+    echo "Successfully created generate_index script at /var/lib/webgen/bin/generate_index."
+    chmod 755 /var/lib/webgen/bin/generate_index # make the script executable
+else
+    echo "Error: Failed to create the file at /var/lib/webgen/bin/generate_index." >&2
+    exit 1
+fi
+fi
+
+
+#create the service and timer files
+if [[ ! -f /etc/systemd/system/generate-index.service ]]; then
+    touch /etc/systemd/system/generate-index.service
+    cat > /etc/systemd/system/generate-index.service <<- isagi
+[Unit]
+Description=Run generate_index script
+After=network-online.target 
+Wants=network-online.target 
+
+[Service]
+Type=oneshot # run the script once and exit
+ExecStart=/var/lib/webgen/bin/generate_index 
+User=webgen
+Group=webgen
+
+[Install]
+WantedBy=multi-user.target
+isagi
+
+if [[ $? -eq 0 ]]; then
+    echo "Successfully created generate-index service at /etc/systemd/system/generate-index.service."
+else
+    echo "Error: Failed to create the file at /etc/systemd/system/generate-index.service." >&2
+    exit 1
+fi
+fi
+
+if [[ ! -f /etc/systemd/system/generate-index.timer ]]; then
+    touch /etc/systemd/system/generate-index.timer
+    cat > /etc/systemd/system/generate-index.timer <<- isagi
+[Unit]
+Description=Run generate-index service everyday at 5 AM
+
+[Timer]
+OnCalendar=*-*-* 05:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+isagi
+
+if [[ $? -eq 0 ]]; then
+    echo "Successfully created generate-index timer at /etc/systemd/system/generate-index.timer."
+else
+    echo "Error: Failed to create the file at /etc/systemd/system/generate-index.timer." >&2
+    exit 1
+fi
+fi
+
+chown -R webgen:webgen /var/lib/webgen # change ownership of the webgen directory to the webgen user
