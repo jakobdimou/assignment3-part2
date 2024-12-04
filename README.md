@@ -1,7 +1,7 @@
 # assignment3 part2 Jakob Dimou ACIT2420 A01398523
 
-## Task 1 and 2 (webgen user creation and creation of generate-index service and timer files)
-Running the script `setup` will create the `webgen` user and proper directories as well as the `generate_index` script. It will also create the generate-index service and timer files. The service and timer files can be enabled and started by typing:
+## (webgen user creation and creation of generate-index service and timer files)
+Running the script `basicsetup` will create the `webgen` user and proper directories as well as the `generate_index` script. It will also create the generate-index service and timer files. The service and timer files can be enabled and started by typing:
 ```
 sudo systemctl enable --now generate-index.service
 sudo systemctl enable --now generate-index.timer
@@ -17,9 +17,10 @@ To check logs of service or timer:
 sudo journalctl -u generate-index.service
 sudo journalctl -u generate-index.timer
 ```
-## Task 3 (nginx configuration)
+## (nginx configuration)
+Running the `nginxsetup` script will create the separate server block file which includes the default page as well as the file server page.
 ### Step 1
-Install the nginx package if it already is not installed - ```sudo pacman -S nginx```
+Before running the script, make sure nginx is installed - ```sudo pacman -S nginx```
 
 To ensure the server runs as the webgen user, modify the `nginx.conf` files by typing:
 ```
@@ -37,27 +38,6 @@ include /etc/nginx/conf.d/*.conf
 And to create the directory if it does not exist:
 ```sudo mkdir -p /etc/nginx/conf.d```
 
-### Step 3
-Create the server block file:
-```
-sudo nvim /etc/nginx/conf.d/webgen.conf
-```
-For the contents of the file, include: 
-```
-server {
-    listen 80;
-    listen [::]:80;
-    
-    server_name _; #wildcard which means any server_name
-    
-    root /var/lib/webgen/HTML;
-    index index.html;
-
-	location / {
-        try_files $uri $uri/ =404;
-    }
-}
-```
 
 Creating a separate server block files allows sites to be disabled easily by just renaming them to add disabled at the end, e.g. `webgen.conf.disabled`. It also makes configurations easier to manage as each configuration has their own separate file.
 
