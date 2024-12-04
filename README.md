@@ -40,6 +40,11 @@ include /etc/nginx/conf.d/*.conf
 
 Creating a separate server block files allows sites to be disabled easily by just renaming them to add disabled at the end, e.g. `webgen.conf.disabled`. It also makes configurations easier to manage as each configuration has their own separate file.
 
+To enable and start nginx :
+```
+sudo systemctl enable --now nginx
+```
+
 To check the status of the nginx service you can type:
 ```
 sudo systemctl status nginx
@@ -49,6 +54,7 @@ To test the nginx configuration:
 ```
 sudo nginx -t
 ```
+
 **source:** [Arch Linux nginx Wiki](https://wiki.archlinux.org/title/Nginx)
 ## Task 4 (ufw configuration)
 Make sure ufw is installed and if not, type:
